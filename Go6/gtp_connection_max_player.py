@@ -477,12 +477,22 @@ class GtpConnection():
             color = GoBoardUtil.color_to_int(board_color)
             self.debug_msg("Board:\n{}\nko: {}\n".format(str(self.board.get_twoD_board()),
                                                           self.board.ko_constraint))
-            move = self.go_engine.get_move(self.board, color)
-            if move is None:
+
+            # Assignment4 - policy max player
+            # =========================================
+            if color != self.board.current_player:
+                self.respond("Opponent's turn")
+                return
+
+            move = self.get_move_prob()[0][0]
+            if move == 'pass':
                 self.respond("pass")
                 self.go_engine.update('pass')
                 self.board.move(None, color)
                 return
+            move = GoBoardUtil.move_to_coord(move, self.board.size)
+            move = self.board._coord_to_point(move[0], move[1])
+            # =========================================
 
             if not self.board.check_legal(move, color):
                 move = self.board._point_to_coord(move)

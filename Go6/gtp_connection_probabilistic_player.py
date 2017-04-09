@@ -4,6 +4,7 @@ Module for playing games of Go using GoTextProtocol
 This code is based off of the gtp module in the Deep-Go project
 by Isaac Henrion and Amos Storkey at the University of Edinburgh.
 """
+import random
 import traceback
 import sys
 import os
@@ -477,12 +478,27 @@ class GtpConnection():
             color = GoBoardUtil.color_to_int(board_color)
             self.debug_msg("Board:\n{}\nko: {}\n".format(str(self.board.get_twoD_board()),
                                                           self.board.ko_constraint))
-            move = self.go_engine.get_move(self.board, color)
-            if move is None:
+
+            # Assignment4 - policy probabilistic player
+            # =========================================
+            if color != self.board.current_player:
+                self.respond("Opponent's turn")
+                return
+
+            move_prob_tuples = self.get_move_prob()
+            if move_prob_tuples[0][0] == 'pass':
                 self.respond("pass")
                 self.go_engine.update('pass')
                 self.board.move(None, color)
                 return
+
+            # based on
+            # https://docs.python.org/3.5/library/random.html
+            population = [val for val, cnt in move_prob_tuples for _ in range(int(cnt*1e5))]
+            move = random.choice(population)
+            move = GoBoardUtil.move_to_coord(move, self.board.size)
+            move = self.board._coord_to_point(move[0], move[1])
+            # =========================================
 
             if not self.board.check_legal(move, color):
                 move = self.board._point_to_coord(move)
